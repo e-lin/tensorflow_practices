@@ -3,42 +3,37 @@
 # Use normal equations method.
 # Author: e-lin
 #
-
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 
 
 def run_training(train_X, train_Y):
-    X = tf.placeholder(tf.float32, [m, n])
+    X = tf.placeholder(tf.float32, [m, n+1])
     Y = tf.placeholder(tf.float32, [m, 1])
 
-    # weights
-    W = tf.Variable(tf.zeros([n, 1]), name="weight")
-    b = tf.Variable(tf.zeros([1]), name="bias")
+    # add the column of 1s to X
+    ones = np.ones([m, 1], dtype=np.float32)
+    train_X = np.concatenate((ones, train_X), axis=1)
 
-    # linear model
-    activation = tf.add(tf.matmul(X, W), b)
-
-
+    # normal equations
+    theta = tf.matmul(tf.matmul(tf.matrix_inverse(tf.matmul(tf.transpose(X), X)), tf.transpose(X)), Y)
 
     with tf.Session() as sess:
-        init = tf.initialize_all_variables()
-        sess.run(init)
 
-
-
-        print "Optimization Finished!"
-        training_cost = sess.run(cost, feed_dict={X: np.asarray(train_X), Y: np.asarray(train_Y)})
-        print "Training Cost=", training_cost, "W=", sess.run(W), "b=", sess.run(b), '\n'
-
+        theta = sess.run(theta, feed_dict={X: train_X, Y: train_Y})
 
         print "Predict.... (Predict a house with 1650 square feet and 3 bedrooms.)"
-        predict_X = np.array([1650, 3], dtype=np.float32).reshape((1, 2))
+        # Do not forget to add the column of 1s
+        predict_X = np.array([1, 1650, 3], dtype=np.float32).reshape((1, 3))
 
+        predict_Y = tf.matmul(predict_X, theta)
 
-        predict_Y = tf.add(tf.matmul(predict_X, W),b)
         print "House price(Y) =", sess.run(predict_Y)
+        print "theta"
+        print theta
+
+        sess.close()
+
 
 def read_data(filename, read_from_file = True):
     global m, n
